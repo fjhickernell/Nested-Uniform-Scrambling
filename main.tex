@@ -1,0 +1,101 @@
+\documentclass{amsart}
+\usepackage{mathtools,upref,siunitx,upquote,fancyvrb,color}
+\usepackage[hyphens]{url}
+\usepackage[utf8]{inputenc}
+\input{FJHDef.tex}
+
+
+\usepackage{algpseudocode}
+\usepackage{algorithm, algorithmicx}
+\algnewcommand\algorithmicparam{\textbf{Parameters:}}
+\algnewcommand\PARAM{\item[\algorithmicparam]}
+\algnewcommand\algorithmicinput{\textbf{Input:}}
+\algnewcommand\INPUT{\item[\algorithmicinput]}
+\algnewcommand\RETURN{\State \textbf{Return }}
+
+
+
+\begin{document}
+\title{Nested Uniform Scrambling}
+\author{Fred J. Hickernell}
+\begin{abstract}This project is where all of the files go that are needed elsewhere
+\end{abstract}
+
+\maketitle
+
+Suppose that $a_0, a_1, \ldots$ is a \textbf{one-dimensional} digital sequence in base $2$, and we went to implement nested uniform scrambling (NUS) \cite{Owe95}.  Let $\va_i = (a_{i1}, a_{i2}, \ldots, a_{iM})$ denote the  vector of binary digits of $a_i$.  The NUS version of the sequence, $x_0, x_1, \ldots$ with digits $\vx_i = (x_{i1}, x_{i2}, \ldots, \vx_{iM})$ is defined as
+\begin{equation*}
+    x_{ik} = \pi_{\bullet,\va_{i,1:k-1}}(a_{ik}),
+\end{equation*}
+where $\va_{i,1:k-1} = (a_{i1}, \ldots, a_{ik-1})$, and all the $\pi_{\bullet,\bullet}$ are IID uniform over $\{0,1\}$.
+
+Although NUS can be applied to any $(t,m,s)$-sequence, we will apply it to digital sequences.  This means that 
+\begin{equation*}
+    \va_i = i_0 \va_1 \oplus i_1 \va_2 \oplus i_2 \va_4 \oplus \cdots \oplus i_m \va_{2^m} \oplus \cdots, \quad \text{where } i = i_0  + 2 i_1 + 4 i_2 + \cdots.
+\end{equation*}
+
+Suppose that we just have $M = 5$ bit precision
+\begin{align*}
+    \va_0 & = (0, 0,0,0,0) \\
+    \va_1 & = (1, 1, 0, 0, 1) \\
+    \va_2 & = (1, 0, 1, 0, 1) \\
+    \va_3 & = \va_1 \oplus \va_2 = (0, 1, 1, 0, 0)
+\end{align*}
+And then
+\begin{align*}
+    \vx_0 & = ({\color{blue} 0, 1, 1, 1, 0}) & \text{{\color{blue}purely random digits}}\\
+    \vx_1 & = (1 - 0 = 1, {\color{blue}0, 0, 1, 1}) & \text{because } a_{1,1} &= 1 - a_{0,1}\\
+    \vx_2 & = (1, 1 - 0 = 1, {\color{blue}1, 0, 1}) & \text{because }\va_{2,1:1} = \va_{1,1:1}, \  a_{22} &= 1 - a_{1,2} \\
+    \vx_3 & = (0, 1-1 = 0, {\color{blue}1, 0, 0}) & \text{because }\va_{3,1:1} = \va_{0,1:1}, \  a_{32} &= 1 - a_{0,2} \\
+\end{align*}
+
+
+If $i \in \{0, \ldots, 2^{m}-1\}$ and $j \in \{2^m, \ldots, 2^{m+1} - 1\}$ satisfy \begin{equation} \label{eq:ijeq}
+    \va_{j,1:m-1} = \va_{i,1:m-1} \oplus \va_{2^m,1:m-1},
+\end{equation}
+then we know that
+\begin{equation*}
+    \vx_{j} = (x_{i1}, x_{i2}, \ldots, x_{i,m-1}, 1-x_{i,m}, x_{j,m+1}, x_{j,m+2},\ldots),
+\end{equation*}
+where the $x_{j,k}, \ldots$ are $\IIDsim \cu\{0,1\}$.  For example, 
+\begin{align*}
+    m & = 0 & i &= 0 \in \{0\}, & j &= 1 \in \{1\}, 
+    & \vx_1 &= (1 - x_{01} = 1, {\color{blue}0, 0, 1, 1}) \\
+    m & = 1 & i &= 1 \in \{0,1\}, & j &= 2 \in \{2,3\}, 
+    & \vx_2 &= (x_{11} = 1, 1 - x_{12} = 1, {\color{blue}1, 0, 1}) \\
+    &  & i &= 0 \in \{0,1\}, & j &= 3 \in \{2,3\}, 
+    & \vx_3 &= (x_{01} = 0, 1 - x_{02} = 0, {\color{blue}1, 0, 1}) \\
+\end{align*}
+
+How do we determine $i$ and $j$ satisfying \eqref{eq:ijeq}?
+\begin{align*}
+    \va_{i} = i_0 \va_1 \oplus \cdots \oplus i_{m-1} \va_m
+\end{align*}
+Define
+\begin{equation*}
+    \mA_{mn} = \begin{pmatrix}
+        a_{11} & a_{21} & \cdots & a_{n1} \\
+        a_{12} & a_{22} & \cdots & a_{n2} \\
+        \vdots & \vdots & \ddots & \vdots \\
+        a_{1m} & a_{12} & \cdots & a_{nm} 
+    \end{pmatrix}, \qquad
+    \vi_m = \begin{pmatrix}i_0 \\ i_1 \\ \vdots \\ i_{m-1}\end{pmatrix}
+\end{equation*}
+Then \eqref{eq:ijeq} can be written as 
+\begin{equation*}
+    \mA_{m-1,m-1} \vi_{m-1} = \mA_{m-1,m} \vj_{m}
+\end{equation*}
+
+
+This implies that 
+\begin{equation*}
+    \va_{i+2^m} = \va_i \oplus \va_{2^m}  \qquad \text{for } i \in \{0, \ldots, 2^{m}-1\}, \quad m = 0, 1, \ldots.
+\end{equation*}
+
+
+\bibliographystyle{amsplain}
+\bibliography{FJH23,FJHown23}
+
+
+
+\end{document}
